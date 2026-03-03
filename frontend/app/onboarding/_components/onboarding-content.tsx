@@ -18,9 +18,10 @@ import OnboardingUpload from "./onboarding-upload";
 
 // Filters for OpenRAG documentation
 const OPENRAG_DOCS_FILTERS: SelectedFilters = {
-  data_sources: ["openrag-documentation.pdf"],
-  document_types: [],
-  owners: [],
+  data_sources: ["*"],
+  document_types: ["*"],
+  owners: ["*"],
+  connector_types: ["system_default"],
 };
 
 export function OnboardingContent({

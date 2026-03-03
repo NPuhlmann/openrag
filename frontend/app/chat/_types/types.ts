@@ -45,6 +45,7 @@ export interface SelectedFilters {
   data_sources: string[];
   document_types: string[];
   owners: string[];
+  connector_types: string[];
 }
 
 export interface KnowledgeFilterData {

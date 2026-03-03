@@ -44,11 +44,15 @@ from api.v1 import chat as v1_chat, search as v1_search, documents as v1_documen
 
 # Configuration and setup
 from config.settings import (
+    DEFAULT_DOCS_CRAWL_DEPTH,
+    DEFAULT_DOCS_INGEST_SOURCE,
+    DEFAULT_DOCS_URL,
     API_KEYS_INDEX_BODY,
     API_KEYS_INDEX_NAME,
     DISABLE_INGEST_WITH_LANGFLOW,
     INGESTION_TIMEOUT,
     INDEX_BODY,
+    LANGFLOW_URL_INGEST_FLOW_ID,
     SESSION_SECRET,
     clients,
     get_embedding_model,
@@ -323,13 +327,37 @@ def _get_documents_dir():
 async def ingest_default_documents_when_ready(
     document_service, task_service, langflow_file_service, session_manager
 ):
-    """Scan the local documents folder and ingest files like a non-auth upload."""
+    """Ingest default OpenRAG docs during onboarding."""
     try:
         logger.info(
             "Ingesting default documents when ready",
             disable_langflow_ingest=DISABLE_INGEST_WITH_LANGFLOW,
+            ingest_source=DEFAULT_DOCS_INGEST_SOURCE,
         )
         await TelemetryClient.send_event(Category.DOCUMENT_INGESTION, MessageId.ORB_DOC_DEFAULT_START)
+        use_url_ingest = (
+            DEFAULT_DOCS_INGEST_SOURCE == "url"
+            and not DISABLE_INGEST_WITH_LANGFLOW
+            and bool(LANGFLOW_URL_INGEST_FLOW_ID)
+        )
+        if (
+            DEFAULT_DOCS_INGEST_SOURCE == "url"
+            and not DISABLE_INGEST_WITH_LANGFLOW
+            and not LANGFLOW_URL_INGEST_FLOW_ID
+        ):
+            logger.warning(
+                "URL docs ingestion flow id is missing; falling back to file-based default ingestion",
+                ingest_source=DEFAULT_DOCS_INGEST_SOURCE,
+            )
+        if use_url_ingest:
+            await _ingest_default_documents_url(
+                session_manager=session_manager,
+                docs_url=DEFAULT_DOCS_URL,
+                crawl_depth=DEFAULT_DOCS_CRAWL_DEPTH,
+            )
+            await TelemetryClient.send_event(Category.DOCUMENT_INGESTION, MessageId.ORB_DOC_DEFAULT_COMPLETE)
+            return
+
         base_dir = _get_documents_dir()
         if not os.path.isdir(base_dir):
             raise FileNotFoundError(f"Default documents directory not found: {base_dir}")
@@ -425,6 +453,67 @@ async def _ingest_default_documents_langflow(
         task_id=task_id,
         file_count=len(file_paths),
     )
+
+
+async def _ingest_default_documents_url(session_manager, docs_url: str, crawl_depth: int):
+    """Ingest default docs by crawling a URL with the Langflow URL ingest flow."""
+    if not LANGFLOW_URL_INGEST_FLOW_ID:
+        raise ValueError("LANGFLOW_URL_INGEST_FLOW_ID is not configured")
+    if not docs_url:
+        raise ValueError("DEFAULT_DOCS_URL is not configured")
+
+    from session_manager import AnonymousUser
+    from utils.langflow_headers import add_provider_credentials_to_headers
+    from config.settings import get_openrag_config
+
+    anonymous_user = AnonymousUser()
+    effective_jwt = None
+    if session_manager:
+        session_manager.get_user_opensearch_client(anonymous_user.user_id, effective_jwt)
+        if hasattr(session_manager, "_anonymous_jwt"):
+            effective_jwt = session_manager._anonymous_jwt
+
+    payload = {
+        "input_value": docs_url,
+        "input_type": "chat",
+        "output_type": "text",
+        "tweaks": {
+            "URLComponent-lnA0q": {
+                "urls": [docs_url],
+                "max_depth": crawl_depth,
+                "prevent_outside": True,
+            }
+        },
+    }
+    config = get_openrag_config()
+    headers = {
+        "X-Langflow-Global-Var-JWT": str(effective_jwt) if effective_jwt else "",
+        "X-Langflow-Global-Var-OWNER": "",
+        "X-Langflow-Global-Var-OWNER_NAME": str(anonymous_user.name),
+        "X-Langflow-Global-Var-OWNER_EMAIL": str(anonymous_user.email),
+        "X-Langflow-Global-Var-CONNECTOR_TYPE": "system_default",
+        "X-Langflow-Global-Var-SELECTED_EMBEDDING_MODEL": str(config.knowledge.embedding_model),
+    }
+    add_provider_credentials_to_headers(headers, config)
+
+    logger.info(
+        "Running default URL docs ingestion flow",
+        docs_url=docs_url,
+        crawl_depth=crawl_depth,
+    )
+    resp = await clients.langflow_request(
+        "POST",
+        f"/api/v1/run/{LANGFLOW_URL_INGEST_FLOW_ID}",
+        json=payload,
+        headers=headers,
+    )
+    if resp.status_code >= 400:
+        logger.error(
+            "Default URL docs ingestion failed",
+            status_code=resp.status_code,
+            body=resp.text[:1000],
+        )
+        resp.raise_for_status()
 
 async def health_check(request: Request):
     """Simple liveness probe: Indicates that the OpenRAG Backend service is online and running."""

@@ -667,6 +667,7 @@ function ChatPage() {
 					data_sources: [],
 					document_types: [],
 					owners: [],
+					connector_types: [],
 				};
 				processed.data_sources = filters.data_sources.includes("*")
 					? []
@@ -675,11 +676,16 @@ function ChatPage() {
 					? []
 					: filters.document_types;
 				processed.owners = filters.owners.includes("*") ? [] : filters.owners;
+				processed.connector_types =
+					filters.connector_types?.includes("*")
+						? []
+						: (filters.connector_types ?? []);
 
 				const hasFilters =
 					processed.data_sources.length > 0 ||
 					processed.document_types.length > 0 ||
-					processed.owners.length > 0;
+					processed.owners.length > 0 ||
+					processed.connector_types.length > 0;
 				return hasFilters ? processed : undefined;
 			})()
 		: undefined;
@@ -708,6 +714,7 @@ function ChatPage() {
 						data_sources: [],
 						document_types: [],
 						owners: [],
+						connector_types: [],
 					};
 					processed.data_sources = filters.data_sources.includes("*")
 						? []
@@ -716,11 +723,16 @@ function ChatPage() {
 						? []
 						: filters.document_types;
 					processed.owners = filters.owners.includes("*") ? [] : filters.owners;
+					processed.connector_types =
+						filters.connector_types?.includes("*")
+							? []
+							: (filters.connector_types ?? []);
 
 					const hasFilters =
 						processed.data_sources.length > 0 ||
 						processed.document_types.length > 0 ||
-						processed.owners.length > 0;
+						processed.owners.length > 0 ||
+						processed.connector_types.length > 0;
 					return hasFilters ? processed : undefined;
 				})()
 			: undefined;
@@ -791,6 +803,7 @@ function ChatPage() {
 								data_sources: [],
 								document_types: [],
 								owners: [],
+								connector_types: [],
 							};
 							// Only copy non-wildcard arrays
 							processed.data_sources = filters.data_sources.includes("*")
@@ -802,12 +815,17 @@ function ChatPage() {
 							processed.owners = filters.owners.includes("*")
 								? []
 								: filters.owners;
+							processed.connector_types =
+								filters.connector_types?.includes("*")
+									? []
+									: (filters.connector_types ?? []);
 
 							// Only include filters if any array has values
 							const hasFilters =
 								processed.data_sources.length > 0 ||
 								processed.document_types.length > 0 ||
-								processed.owners.length > 0;
+								processed.owners.length > 0 ||
+								processed.connector_types.length > 0;
 							return hasFilters ? { filters: processed } : {};
 						})()),
 					limit: parsedFilterData?.limit ?? 10,

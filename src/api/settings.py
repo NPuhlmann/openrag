@@ -1135,10 +1135,12 @@ async def _create_openrag_docs_filter(
     query_data = json.dumps({
         "query": "",
         "filters": {
-            "data_sources": ["openrag-documentation.pdf"],
+            # URL-based docs ingestion produces many source URLs.
+            # Filter by connector type to target the OpenRAG system docs set.
+            "data_sources": ["*"],
             "document_types": ["*"],
             "owners": ["*"],
-            "connector_types": ["*"],
+            "connector_types": ["system_default"],
         },
         "limit": 10,
         "scoreThreshold": 0,
