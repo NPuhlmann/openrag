@@ -795,8 +795,9 @@ async def ibm_cos_configure(
             cos = create_ibm_cos_client(conn_config)
             cos.list_buckets()
     except Exception as exc:
+        logger.exception("Failed to connect to IBM COS during credential test.")
         return JSONResponse(
-            {"error": f"Could not connect to IBM COS: {exc}"},
+            {"error": "Could not connect to IBM COS with the provided configuration."},
             status_code=400,
         )
 
