@@ -24,10 +24,11 @@ _DIRECT_AUTH_CONNECTORS = {"ibm_cos"}
 
 
 class AuthService:
-    def __init__(self, session_manager: SessionManager, connector_service=None, langflow_mcp_service: LangflowMCPService | None = None):
+    def __init__(self, session_manager: SessionManager, connector_service=None, flows_service=None, langflow_mcp_service: LangflowMCPService | None = None):
         self.session_manager = session_manager
         self.connector_service = connector_service
         self.used_auth_codes = set()  # Track used authorization codes
+        self.flows_service = flows_service
         self.langflow_mcp_service = langflow_mcp_service
         self._background_tasks = set()
 
@@ -379,7 +380,7 @@ class AuthService:
                     from utils.langflow_headers import build_mcp_global_vars_from_config
                     
                     config = get_openrag_config()
-                    provider_vars = build_mcp_global_vars_from_config(config)
+                    provider_vars = await build_mcp_global_vars_from_config(config, flows_service=self.flows_service)
                     
                     # Merge provider credentials with user info
                     global_vars.update(provider_vars)

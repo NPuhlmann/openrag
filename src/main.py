@@ -1083,7 +1083,8 @@ async def _update_mcp_servers_with_provider_credentials(services):
         # Build global vars with provider credentials using utility function
         from utils.langflow_headers import build_mcp_global_vars_from_config
 
-        global_vars = build_mcp_global_vars_from_config(config)
+        flows_service = services.get("flows_service")
+        global_vars = await build_mcp_global_vars_from_config(config, flows_service=flows_service)
 
         # In no-auth mode, add the anonymous JWT token and user details
         if is_no_auth_mode() and session_manager:
@@ -1260,11 +1261,12 @@ async def initialize_services():
     document_service = DocumentService(session_manager=session_manager)
     search_service = SearchService(session_manager)
     task_service = TaskService(document_service, ingestion_timeout=INGESTION_TIMEOUT)
-    chat_service = ChatService()
     flows_service = FlowsService()
+    chat_service = ChatService(flows_service=flows_service)
     knowledge_filter_service = KnowledgeFilterService(session_manager)
     models_service = ModelsService()
     monitor_service = MonitorService(session_manager)
+    langflow_file_service = LangflowFileService(flows_service=flows_service)
 
     # Initialize both connector services
     langflow_connector_service = LangflowConnectorService(
@@ -1289,6 +1291,7 @@ async def initialize_services():
     auth_service = AuthService(
         session_manager,
         connector_service,
+        flows_service,
         langflow_mcp_service=LangflowMCPService(),
     )
 
@@ -1318,7 +1321,7 @@ async def initialize_services():
         Category.SERVICE_INITIALIZATION, MessageId.ORB_SVC_INIT_SUCCESS
     )
 
-    langflow_file_service = LangflowFileService()
+
 
     # API Key service for public API authentication
     api_key_service = APIKeyService(session_manager)
