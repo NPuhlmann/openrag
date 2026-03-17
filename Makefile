@@ -759,7 +759,7 @@ test-ci: ## Start infra, run integration + SDK tests, tear down (uses DockerHub 
 	OPENSEARCH_HOST=localhost OPENSEARCH_PORT=9200 \
 	OPENSEARCH_USERNAME=admin OPENSEARCH_PASSWORD=$${OPENSEARCH_PASSWORD} \
 	DISABLE_STARTUP_INGEST=$${DISABLE_STARTUP_INGEST:-true} \
-	uv run pytest tests/integration -vv -s -o log_cli=true --log-cli-level=DEBUG; \
+	uv run pytest tests/integration --ignore=tests/integration/test_sdk.py -vv -s -o log_cli=true --log-cli-level=DEBUG; \
 	TEST_RESULT=$$?; \
 	echo ""; \
 	echo "$(YELLOW)Waiting for frontend at http://localhost:3000...$(NC)"; \
@@ -873,7 +873,7 @@ test-ci-local: ## Same as test-ci but builds all images locally
 	OPENSEARCH_HOST=localhost OPENSEARCH_PORT=9200 \
 	OPENSEARCH_USERNAME=admin OPENSEARCH_PASSWORD=$${OPENSEARCH_PASSWORD} \
 	DISABLE_STARTUP_INGEST=$${DISABLE_STARTUP_INGEST:-true} \
-	uv run pytest tests/integration -vv -s -o log_cli=true --log-cli-level=DEBUG; \
+	uv run pytest tests/integration --ignore=tests/integration/test_sdk.py -vv -s -o log_cli=true --log-cli-level=DEBUG; \
 	TEST_RESULT=$$?; \
 	echo ""; \
 	echo "$(YELLOW)Waiting for frontend at http://localhost:3000...$(NC)"; \
