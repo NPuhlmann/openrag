@@ -73,6 +73,19 @@ const sidebars = {
       id: "core-components/chat",
       label: "Chat",
     },
+    {
+      type: "category",
+      label: "Multi-Tenant Deployment",
+      items: [
+        "deployment/multi-tenant-overview",
+        "deployment/shared-infrastructure",
+        "deployment/data-isolation",
+        "deployment/tenant-provisioning",
+        "deployment/llm-keys-billing",
+        "deployment/shared-knowledge",
+        "deployment/scaling",
+      ],
+    },
     "reference/configuration",
     {
       type: "doc",
