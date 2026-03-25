@@ -1,7 +1,6 @@
 import copy
 import json
 from typing import Any, Dict
-from agentd.tool_decorator import tool
 from config.settings import EMBED_MODEL, clients, get_embedding_model, get_index_name, WATSONX_EMBEDDING_DIMENSIONS
 from auth_context import get_auth_context
 from utils.logging_config import get_logger
@@ -17,7 +16,6 @@ class SearchService:
     def __init__(self, session_manager=None):
         self.session_manager = session_manager
 
-    @tool
     async def search_tool(self, query: str, embedding_model: str = None) -> Dict[str, Any]:
         """
         Use this tool to search for documents relevant to the query.
